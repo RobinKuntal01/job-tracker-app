@@ -22,28 +22,6 @@
   }
   body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
 
-  /* AUTH SCREEN */
-  #auth-screen {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 24px; padding: 20px;
-  }
-  .auth-card {
-    background: var(--surface); border: 1px solid var(--border2);
-    border-radius: 16px; padding: 36px 40px; width: 100%; max-width: 400px; text-align: center;
-  }
-  .auth-card .logo-icon { font-size: 36px; margin-bottom: 16px; }
-  .auth-card h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
-  .auth-card p { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
-  .google-btn {
-    width: 100%; padding: 12px; border-radius: var(--radius);
-    background: #fff; border: none; color: #1a1a1a;
-    font-family: var(--font); font-size: 14px; font-weight: 500;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-    transition: opacity 0.15s;
-  }
-  .google-btn:hover { opacity: 0.9; }
-  .google-btn img { width: 18px; height: 18px; }
-  #auth-error { color: var(--red); font-size: 12px; margin-top: 10px; }
 
   /* APP */
   #app-screen { display: none; flex-direction: column; min-height: 100vh; }
@@ -243,21 +221,6 @@
 <div id="loading-screen">
   <div class="spinner"></div>
   <div style="font-size:13px;color:var(--text2)">Loading...</div>
-</div>
-
-<!-- AUTH -->
-<div id="auth-screen" style="display:none">
-  <div class="auth-card">
-    <div class="logo-icon">📋</div>
-    <h1>Job Tracker</h1>
-    <p>Enter your PIN to access your tracker.</p>
-    <input type="password" id="pin-input" placeholder="Enter PIN" onkeydown="handlePinKey(event)"
-      style="width:100%;padding:12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:var(--font);font-size:16px;text-align:center;letter-spacing:6px;outline:none;margin-bottom:12px;">
-    <button class="google-btn" onclick="checkPin()" style="background:var(--accent);color:#fff;border:none;">
-      Unlock →
-    </button>
-    <div id="auth-error"></div>
-  </div>
 </div>
 
 <!-- MAIN APP -->
