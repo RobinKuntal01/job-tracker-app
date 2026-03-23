@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f11; --surface: #18181c; --surface2: #222228; --surface3: #2a2a32;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+    --text: #f0eff4; --text2: #9998a8; --text3: #5c5b6e;
+    --accent: #7c6af7; --accent2: #9d8ffa; --accent-bg: rgba(124,106,247,0.12);
+    --green: #3dd68c; --green-bg: rgba(61,214,140,0.1);
+    --amber: #f0a030; --amber-bg: rgba(240,160,48,0.1);
+    --red: #f05570; --red-bg: rgba(240,85,112,0.1);
+    --blue: #48b4f0; --blue-bg: rgba(72,180,240,0.1);
+    --pink: #e880c0; --pink-bg: rgba(232,128,192,0.1);
+    --radius: 10px; --radius-sm: 6px;
+    --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+
+  /* AUTH SCREEN */
+  #auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 24px; padding: 20px;
+  }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 36px 40px; width: 100%; max-width: 400px; text-align: center;
+  }
+  .auth-card .logo-icon { font-size: 36px; margin-bottom: 16px; }
+  .auth-card h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .auth-card p { color: var(--text2); font-size: 13px; margin-bottom: 28px; }
+  .google-btn {
+    width: 100%; padding: 12px; border-radius: var(--radius);
+    background: #fff; border: none; color: #1a1a1a;
+    font-family: var(--font); font-size: 14px; font-weight: 500;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: opacity 0.15s;
+  }
+  .google-btn:hover { opacity: 0.9; }
+  .google-btn img { width: 18px; height: 18px; }
+  #auth-error { color: var(--red); font-size: 12px; margin-top: 10px; }
+
+  /* APP */
+  #app-screen { display: none; flex-direction: column; min-height: 100vh; }
+
+  header {
+    padding: 14px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    background: var(--surface); position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon-sm {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--accent-bg); border: 1px solid var(--accent);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .logo h1 { font-size: 15px; font-weight: 600; }
+  .user-info { display: flex; align-items: center; gap: 10px; }
+  .user-avatar {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--accent-bg);
+    border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: var(--accent2); overflow: hidden;
+  }
+  .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .user-name { font-size: 12px; color: var(--text2); }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 4px; }
+  .sync-dot.syncing { background: var(--amber); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .stats-bar { display: flex; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .stat-pill { flex: 1; min-width: 90px; padding: 10px 16px; background: var(--surface); text-align: center; cursor: pointer; transition: background 0.15s; }
+  .stat-pill:hover { background: var(--surface2); }
+  .stat-pill.active { background: var(--surface3); }
+  .stat-pill .num { font-size: 20px; font-weight: 600; }
+  .stat-pill .lbl { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; margin-top: 2px; }
+  .s-total .num { color: var(--text); }
+  .s-applied .num { color: var(--accent2); }
+  .s-interview .num { color: var(--amber); }
+  .s-offer .num { color: var(--green); }
+  .s-rejected .num { color: var(--red); }
+
+  .toolbar {
+    padding: 10px 24px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .search-box {
+    flex: 1; min-width: 160px; display: flex; align-items: center; gap: 8px;
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 7px 10px;
+  }
+  .search-box input { background: none; border: none; outline: none; color: var(--text); font-family: var(--font); font-size: 13px; width: 100%; }
+  .search-box input::placeholder { color: var(--text3); }
+  select, .btn {
+    background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+    font-family: var(--font); font-size: 13px; border-radius: var(--radius-sm); padding: 7px 10px;
+    cursor: pointer; outline: none;
+  }
+  select:hover, .btn:hover { border-color: var(--accent); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--text2); }
+  .btn-ghost:hover { color: var(--red); border-color: var(--red); }
+
+  .table-wrap { flex: 1; overflow: auto; padding: 20px 24px; }
+  table { width: 100%; border-collapse: collapse; min-width: 880px; }
+  thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px;
+    color: var(--text3); padding: 0 12px 10px; border-bottom: 1px solid var(--border); font-weight: 500; white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; cursor: pointer; }
+  tbody tr:hover { background: var(--surface); }
+  tbody td { padding: 11px 12px; font-size: 13px; vertical-align: middle; }
+
+  .company-cell { display: flex; align-items: center; gap: 10px; }
+  .company-logo {
+    width: 30px; height: 30px; border-radius: 7px; background: var(--surface2); border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
+    color: var(--text2); flex-shrink: 0; font-family: var(--mono);
+  }
+  .company-name { font-weight: 500; font-size: 13px; }
+  .company-role { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .b-applied { background: var(--accent-bg); color: var(--accent2); }
+  .b-screening { background: var(--blue-bg); color: var(--blue); }
+  .b-interview { background: var(--amber-bg); color: var(--amber); }
+  .b-technical { background: var(--pink-bg); color: var(--pink); }
+  .b-offer { background: var(--green-bg); color: var(--green); }
+  .b-rejected { background: var(--red-bg); color: var(--red); }
+  .b-ghosted { background: rgba(255,255,255,0.05); color: var(--text3); }
+
+  .platform-tag { padding: 2px 7px; border-radius: 4px; font-size: 11px; background: var(--surface3); color: var(--text2); border: 1px solid var(--border); }
+  .date-cell { color: var(--text2); font-family: var(--mono); font-size: 12px; }
+
+  .contact-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--surface3); border: 1px solid var(--border2);
+    padding: 2px 7px; border-radius: 20px; font-size: 11px; color: var(--text2); margin: 2px;
+  }
+  .contact-chip .dept { color: var(--text3); }
+
+  .row-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+  tbody tr:hover .row-actions { opacity: 1; }
+  .icon-btn {
+    width: 26px; height: 26px; border-radius: 5px; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text2); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s;
+  }
+  .icon-btn:hover { background: var(--surface3); color: var(--text); }
+  .icon-btn.del:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 14px;
+    width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; padding: 24px;
+    transform: translateY(10px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .modal-header h2 { font-size: 15px; font-weight: 600; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+    font-family: var(--font); font-size: 13px; border-radius: var(--radius-sm); padding: 8px 10px; outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 65px; }
+  .field select option { background: var(--surface2); }
+
+  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); margin: 18px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+  .contact-card {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 9px 12px; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; margin-bottom: 7px;
+  }
+  .contact-card .cn { font-weight: 500; font-size: 13px; }
+  .contact-card .cd { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .conn-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+  .c-requested { background: var(--amber-bg); color: var(--amber); }
+  .c-connected { background: var(--green-bg); color: var(--green); }
+  .c-not-sent { background: var(--surface3); color: var(--text3); }
+
+  .add-contact-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; margin-top: 8px; }
+  .add-contact-row input, .add-contact-row select {
+    background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+    font-family: var(--font); font-size: 12px; border-radius: var(--radius-sm); padding: 7px 9px; outline: none;
+  }
+  .add-contact-row input:focus, .add-contact-row select:focus { border-color: var(--accent); }
+
+  .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+  .empty { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty .e-icon { font-size: 38px; margin-bottom: 12px; }
+  .empty h3 { font-size: 15px; color: var(--text2); margin-bottom: 6px; }
+
+  /* LOADING */
+  #loading-screen {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; z-index: 9999;
+  }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; z-index: 2000;
+    background: var(--surface3); border: 1px solid var(--border2); color: var(--text);
+    padding: 9px 14px; border-radius: var(--radius); font-size: 13px;
+    transform: translateY(16px); opacity: 0; transition: all 0.22s; pointer-events: none;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.ok { border-color: var(--green); }
+  .toast.err { border-color: var(--red); }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+
+  @media(max-width:640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .add-contact-row { grid-template-columns: 1fr 1fr; }
+    .add-contact-row .ac-btn { grid-column: 1/-1; }
+    header { padding: 12px 16px; }
+    .table-wrap, .toolbar { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--text2)">Loading...</div>
+</div>
+
+<!-- AUTH -->
+<div id="auth-screen" style="display:none">
+  <div class="auth-card">
+    <div class="logo-icon">📋</div>
+    <h1>Job Application Tracker</h1>
+    <p>Sign in with your Google account to access your tracker from any device.</p>
+    <button class="google-btn" onclick="signInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continue with Google
+    </button>
+    <div id="auth-error"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-screen">
+  <header>
+    <div class="logo">
+      <div class="logo-icon-sm">📋</div>
+      <h1>Job Tracker</h1>
+    </div>
+    <div class="user-info">
+      <span class="sync-dot" id="sync-dot"></span>
+      <span id="sync-label" style="font-size:11px;color:var(--text3)">Live</span>
+      <div class="user-avatar" id="user-avatar"></div>
+      <span class="user-name" id="user-name"></span>
+      <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-pill s-total active" onclick="filterByStatus('')"><div class="num" id="st-total">0</div><div class="lbl">Total</div></div>
+    <div class="stat-pill s-applied" onclick="filterByStatus('applied')"><div class="num" id="st-applied">0</div><div class="lbl">Applied</div></div>
+    <div class="stat-pill s-interview" onclick="filterByStatus('interview')"><div class="num" id="st-interview">0</div><div class="lbl">Interviews</div></div>
+    <div class="stat-pill s-offer" onclick="filterByStatus('offer')"><div class="num" id="st-offer">0</div><div class="lbl">Offers</div></div>
+    <div class="stat-pill s-rejected" onclick="filterByStatus('rejected')"><div class="num" id="st-rejected">0</div><div class="lbl">Rejected</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search-input" placeholder="Search company, role, platform..." oninput="renderTable()">
+    </div>
+    <select id="filter-status" onchange="renderTable()">
+      <option value="">All Statuses</option>
+      <option value="applied">Applied</option>
+      <option value="screening">Screening</option>
+      <option value="interview">Interview</option>
+      <option value="technical">Technical</option>
+      <option value="offer">Offer</option>
+      <option value="rejected">Rejected</option>
+      <option value="ghosted">Ghosted</option>
+    </select>
+    <select id="filter-platform" onchange="renderTable()">
+      <option value="">All Platforms</option>
+      <option value="LinkedIn">LinkedIn</option>
+      <option value="Naukri">Naukri</option>
+      <option value="Indeed">Indeed</option>
+      <option value="Instahyre">Instahyre</option>
+      <option value="Cutshort">Cutshort</option>
+      <option value="Wellfound">Wellfound</option>
+      <option value="Company Site">Company Site</option>
+      <option value="Referral">Referral</option>
+    </select>
+    <select id="sort-by" onchange="renderTable()">
+      <option value="date-desc">Newest First</option>
+      <option value="date-asc">Oldest First</option>
+      <option value="company">Company A–Z</option>
+      <option value="status">By Status</option>
+    </select>
+    <button class="btn btn-primary" onclick="openModal()">+ Add Application</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Company &amp; Role</th>
+          <th>Platform</th>
+          <th>Status</th>
+          <th>Applied</th>
+          <th>LinkedIn Contacts</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div id="empty-state" class="empty" style="display:none">
+      <div class="e-icon">🗂️</div>
+      <h3>No applications yet</h3>
+      <p>Click "+ Add Application" to log your first one</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeOnBackdrop(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">New Application</h2>
+      <button class="icon-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Company Name *</label><input type="text" id="f-company" placeholder="e.g. Razorpay"></div>
+      <div class="field"><label>Job Role *</label><input type="text" id="f-role" placeholder="e.g. Backend Engineer"></div>
+      <div class="field">
+        <label>Platform</label>
+        <select id="f-platform">
+          <option>LinkedIn</option><option>Naukri</option><option>Indeed</option>
+          <option>Instahyre</option><option>Cutshort</option><option>Wellfound</option>
+          <option>Company Site</option><option>Referral</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="f-status">
+          <option value="applied">Applied</option><option value="screening">Screening</option>
+          <option value="interview">Interview</option><option value="technical">Technical Round</option>
+          <option value="offer">Offer</option><option value="rejected">Rejected</option>
+          <option value="ghosted">Ghosted</option>
+        </select>
+      </div>
+      <div class="field"><label>Date Applied</label><input type="date" id="f-date"></div>
+      <div class="field"><label>Job URL</label><input type="url" id="f-url" placeholder="https://..."></div>
+      <div class="field full"><label>Notes</label><textarea id="f-notes" placeholder="Interview dates, salary range, recruiter name, anything relevant..."></textarea></div>
+    </div>
+
+    <div class="section-title">
+      LinkedIn Contacts
+      <span style="font-size:11px;color:var(--text3);text-transform:none;letter-spacing:0">People you've added / requested from this org</span>
+    </div>
+    <div id="contacts-list"></div>
+    <div class="add-contact-row">
+      <input type="text" id="nc-name" placeholder="Name (e.g. Priya Sharma)">
+      <input type="text" id="nc-dept" placeholder="Department (e.g. Engineering)">
+      <select id="nc-status">
+        <option value="not-sent">Not Sent</option>
+        <option value="requested">Request Sent</option>
+        <option value="connected">Connected</option>
+      </select>
+      <button class="btn btn-primary ac-btn" onclick="addContact()">+ Add</button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveApp()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as fbSignOut }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDw_QwXE5xw2dSyWXL5vXVcafCLm83kTqQ",
+    authDomain: "job-app-tracker-55272.firebaseapp.com",
+    projectId: "job-app-tracker-55272",
+    storageBucket: "job-app-tracker-55272.firebasestorage.app",
+    messagingSenderId: "1017443054969",
+    appId: "1:1017443054969:web:cbf9e68c3877efc2372ba8"
+  };
+
+  const firebaseApp = initializeApp(firebaseConfig);
+  const auth = getAuth(firebaseApp);
+  const db = getFirestore(firebaseApp);
+  const provider = new GoogleAuthProvider();
+
+  let currentUser = null;
+  let unsubscribe = null;
+  let apps = [];
+  let editingId = null;
+  let editContacts = [];
+
+  /* ---- AUTH ---- */
+  window.signInGoogle = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch(e) {
+      document.getElementById('auth-error').textContent = 'Sign-in failed: ' + e.message;
+    }
+  };
+
+  window.signOut = async () => {
+    if(unsubscribe) unsubscribe();
+    await fbSignOut(auth);
+  };
+
+  onAuthStateChanged(auth, user => {
+    document.getElementById('loading-screen').style.display = 'none';
+    if(user) {
+      currentUser = user;
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'flex';
+      document.getElementById('user-name').textContent = user.displayName?.split(' ')[0] || '';
+      const av = document.getElementById('user-avatar');
+      if(user.photoURL) av.innerHTML = `<img src="${user.photoURL}">`;
+      else av.textContent = (user.displayName||'U')[0].toUpperCase();
+      subscribeToData();
+    } else {
+      currentUser = null;
+      apps = [];
+      document.getElementById('app-screen').style.display = 'none';
+      document.getElementById('auth-screen').style.display = 'flex';
+    }
+  });
+
+  /* ---- FIRESTORE ---- */
+  function colRef() {
+    return collection(db, 'users', currentUser.uid, 'applications');
+  }
+
+  function subscribeToData() {
+    setSyncing(true);
+    const q = query(colRef(), orderBy('createdAt', 'desc'));
+    unsubscribe = onSnapshot(q, snap => {
+      apps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAll();
+      setSyncing(false);
+    }, err => {
+      showToast('Sync error: ' + err.message, 'err');
+      setSyncing(false);
+    });
+  }
+
+  window._saveApp = async (obj) => {
+    setSyncing(true);
+    try {
+      await setDoc(doc(colRef(), obj.id), obj);
+    } catch(e) {
+      showToast('Save failed: ' + e.message, 'err');
+      setSyncing(false);
+    }
+  };
+
+  window._deleteApp = async (id) => {
+    setSyncing(true);
+    try {
+      await deleteDoc(doc(colRef(), id));
+    } catch(e) {
+      showToast('Delete failed: ' + e.message, 'err');
+      setSyncing(false);
+    }
+  };
+
+  /* ---- RENDER ---- */
+  function renderAll() { renderStats(); renderTable(); }
+
+  function renderStats() {
+    let total=apps.length, applied=0, interview=0, offer=0, rejected=0;
+    apps.forEach(a => {
+      if(['applied','screening'].includes(a.status)) applied++;
+      if(['interview','technical'].includes(a.status)) interview++;
+      if(a.status==='offer') offer++;
+      if(['rejected','ghosted'].includes(a.status)) rejected++;
+    });
+    document.getElementById('st-total').textContent = total;
+    document.getElementById('st-applied').textContent = applied;
+    document.getElementById('st-interview').textContent = interview;
+    document.getElementById('st-offer').textContent = offer;
+    document.getElementById('st-rejected').textContent = rejected;
+  }
+
+  window.filterByStatus = (s) => {
+    document.getElementById('filter-status').value = s;
+    document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active'));
+    const map = {'':'s-total','applied':'s-applied','interview':'s-interview','offer':'s-offer','rejected':'s-rejected'};
+    document.querySelector('.'+(map[s]||'s-total'))?.classList.add('active');
+    renderTable();
+  };
+
+  function renderTable() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const fs = document.getElementById('filter-status').value;
+    const fp = document.getElementById('filter-platform').value;
+    const sort = document.getElementById('sort-by').value;
+
+    let data = apps.filter(a => {
+      const mq = !q || [a.company,a.role,a.platform].some(x=>(x||'').toLowerCase().includes(q));
+      const ms = !fs || a.status===fs || (fs==='applied'&&a.status==='screening') || (fs==='interview'&&a.status==='technical') || (fs==='rejected'&&a.status==='ghosted');
+      const mp = !fp || a.platform===fp;
+      return mq && ms && mp;
+    });
+
+    if(sort==='date-asc') data.sort((a,b)=>new Date(a.date||0)-new Date(b.date||0));
+    else if(sort==='company') data.sort((a,b)=>(a.company||'').localeCompare(b.company||''));
+    else if(sort==='status') data.sort((a,b)=>(a.status||'').localeCompare(b.status||''));
+    else data.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+
+    const tbody = document.getElementById('table-body');
+    const empty = document.getElementById('empty-state');
+    if(!data.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display='none';
+
+    tbody.innerHTML = data.map(a => {
+      const ini = (a.company||'??').slice(0,2).toUpperCase();
+      const contacts = (a.contacts||[]).map(c => {
+        const dot = c.status==='connected'?'🟢':c.status==='requested'?'🟡':'⚪';
+        return `<span class="contact-chip">${dot} ${esc(c.name)}${c.dept?` <span class="dept">· ${esc(c.dept)}</span>`:''}</span>`;
+      }).join('');
+      const urlBtn = a.url ? `<a href="${esc(a.url)}" target="_blank" onclick="event.stopPropagation()" class="icon-btn" title="Open job URL" style="text-decoration:none">🔗</a>` : '';
+      return `<tr onclick="openModal('${a.id}')">
+        <td><div class="company-cell">
+          <div class="company-logo">${ini}</div>
+          <div><div class="company-name">${esc(a.company)}</div><div class="company-role">${esc(a.role)}</div></div>
+        </div></td>
+        <td><span class="platform-tag">${esc(a.platform||'—')}</span></td>
+        <td><span class="badge b-${a.status}">${statusLabel(a.status)}</span></td>
+        <td class="date-cell">${fmtDate(a.date)}</td>
+        <td>${contacts||'<span style="color:var(--text3);font-size:11px">None</span>'}</td>
+        <td style="max-width:160px;color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.notes||'')}</td>
+        <td><div class="row-actions">${urlBtn}
+          <button class="icon-btn" onclick="openModal('${a.id}');event.stopPropagation()" title="Edit">✏️</button>
+          <button class="icon-btn del" onclick="deleteApp(event,'${a.id}')" title="Delete">🗑</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  /* ---- MODAL ---- */
+  window.openModal = (id) => {
+    editingId = id || null;
+    editContacts = [];
+    const a = id ? apps.find(x=>x.id===id) : null;
+    document.getElementById('modal-title').textContent = a ? 'Edit Application' : 'New Application';
+    document.getElementById('f-company').value = a?.company||'';
+    document.getElementById('f-role').value = a?.role||'';
+    document.getElementById('f-platform').value = a?.platform||'LinkedIn';
+    document.getElementById('f-status').value = a?.status||'applied';
+    document.getElementById('f-date').value = a?.date||new Date().toISOString().split('T')[0];
+    document.getElementById('f-url').value = a?.url||'';
+    document.getElementById('f-notes').value = a?.notes||'';
+    editContacts = a?.contacts ? JSON.parse(JSON.stringify(a.contacts)) : [];
+    renderContacts();
+    document.getElementById('modal-overlay').classList.add('open');
+    setTimeout(()=>document.getElementById('f-company').focus(), 50);
+  };
+
+  window.closeModal = () => { document.getElementById('modal-overlay').classList.remove('open'); editingId=null; editContacts=[]; };
+  window.closeOnBackdrop = (e) => { if(e.target===document.getElementById('modal-overlay')) closeModal(); };
+
+  function renderContacts() {
+    const list = document.getElementById('contacts-list');
+    list.innerHTML = editContacts.map((c,i)=>{
+      const cls = c.status==='connected'?'c-connected':c.status==='requested'?'c-requested':'c-not-sent';
+      const lbl = c.status==='connected'?'Connected':c.status==='requested'?'Requested':'Not Sent';
+      return `<div class="contact-card">
+        <div><div class="cn">${esc(c.name)}</div><div class="cd">${esc(c.dept||'')}${c.dept&&c.role?' · ':''}${esc(c.role||'')}</div></div>
+        <span class="conn-badge ${cls}">${lbl}</span>
+        <button class="icon-btn del" onclick="removeContact(${i})" style="opacity:1">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  window.addContact = () => {
+    const name = document.getElementById('nc-name').value.trim();
+    const dept = document.getElementById('nc-dept').value.trim();
+    const status = document.getElementById('nc-status').value;
+    if(!name) { showToast('Enter a contact name', 'err'); return; }
+    editContacts.push({name, dept, status});
+    renderContacts();
+    document.getElementById('nc-name').value='';
+    document.getElementById('nc-dept').value='';
+    document.getElementById('nc-status').value='requested';
+    document.getElementById('nc-name').focus();
+  };
+
+  window.removeContact = (i) => { editContacts.splice(i,1); renderContacts(); };
+
+  window.saveApp = async () => {
+    const company = document.getElementById('f-company').value.trim();
+    const role = document.getElementById('f-role').value.trim();
+    if(!company||!role) { showToast('Company and role are required', 'err'); return; }
+    const btn = document.getElementById('save-btn');
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    const obj = {
+      id: editingId || uid(),
+      company, role,
+      platform: document.getElementById('f-platform').value,
+      status: document.getElementById('f-status').value,
+      date: document.getElementById('f-date').value,
+      url: document.getElementById('f-url').value.trim(),
+      notes: document.getElementById('f-notes').value.trim(),
+      contacts: editContacts,
+      createdAt: editingId ? (apps.find(a=>a.id===editingId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await window._saveApp(obj);
+    btn.textContent = 'Save'; btn.disabled = false;
+    closeModal();
+    showToast(editingId ? 'Application updated ✓' : 'Application added ✓', 'ok');
+  };
+
+  window.deleteApp = async (e, id) => {
+    e.stopPropagation();
+    if(!confirm('Delete this application?')) return;
+    await window._deleteApp(id);
+    showToast('Deleted', '');
+  };
+
+  /* ---- HELPERS ---- */
+  function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmtDate(d) {
+    if(!d) return '—';
+    const dt = new Date(d+'T00:00:00');
+    return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
+  }
+  function statusLabel(s) {
+    return {applied:'Applied',screening:'Screening',interview:'Interview',technical:'Technical',offer:'Offer',rejected:'Rejected',ghosted:'Ghosted'}[s]||s;
+  }
+  function setSyncing(v) {
+    const dot = document.getElementById('sync-dot');
+    const lbl = document.getElementById('sync-label');
+    dot.className = 'sync-dot' + (v?' syncing':'');
+    lbl.textContent = v ? 'Syncing...' : 'Live';
+  }
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent=msg; t.className='toast '+(type||'');
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
