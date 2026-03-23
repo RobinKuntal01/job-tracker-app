@@ -429,46 +429,67 @@
   /* ---- AUTH ---- */
   window.signInGoogle = async () => {
     try {
-      const btn = document.querySelector(".google-btn");
-      btn.textContent = "Redirecting to Google...";
+      const btn = document.querySelector('.google-btn');
+      btn.textContent = 'Redirecting to Google...';
       btn.disabled = true;
       await signInWithRedirect(auth, provider);
     } catch(e) {
-      document.getElementById("auth-error").textContent = "Sign-in failed: " + e.message;
+      document.getElementById('auth-error').textContent = 'Sign-in failed: ' + e.message;
     }
   };
 
   window.signOut = async () => {
     if(unsubscribe) unsubscribe();
     await fbSignOut(auth);
+    showScreen('auth');
   };
 
-  getRedirectResult(auth).catch(e => {
-    if(e && e.code !== "auth/no-current-user") {
-      const el = document.getElementById("auth-error");
-      if(el) el.textContent = "Sign-in error: " + e.message;
-    }
-  });
-
-
-  onAuthStateChanged(auth, user => {
+  function showScreen(which) {
     document.getElementById('loading-screen').style.display = 'none';
-    if(user) {
-      currentUser = user;
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('app-screen').style.display = 'flex';
-      document.getElementById('user-name').textContent = user.displayName?.split(' ')[0] || '';
-      const av = document.getElementById('user-avatar');
-      if(user.photoURL) av.innerHTML = `<img src="${user.photoURL}">`;
-      else av.textContent = (user.displayName||'U')[0].toUpperCase();
-      subscribeToData();
-    } else {
-      currentUser = null;
-      apps = [];
-      document.getElementById('app-screen').style.display = 'none';
-      document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('auth-screen').style.display = which === 'auth' ? 'flex' : 'none';
+    document.getElementById('app-screen').style.display = which === 'app' ? 'flex' : 'none';
+  }
+
+  function initUser(user) {
+    currentUser = user;
+    document.getElementById('user-name').textContent = user.displayName?.split(' ')[0] || '';
+    const av = document.getElementById('user-avatar');
+    if(user.photoURL) av.innerHTML = `<img src="${user.photoURL}">`;
+    else av.textContent = (user.displayName||'U')[0].toUpperCase();
+    showScreen('app');
+    subscribeToData();
+  }
+
+  // Step 1: handle the redirect result first (fires when returning from Google)
+  // Step 2: then fall through to onAuthStateChanged for normal session persistence
+  async function initAuth() {
+    try {
+      const result = await getRedirectResult(auth);
+      if(result?.user) {
+        // Just came back from Google redirect — user is now signed in
+        initUser(result.user);
+        return;
+      }
+    } catch(e) {
+      console.error('Redirect result error:', e);
+      document.getElementById('auth-error').textContent = 'Sign-in error: ' + (e.message || e.code);
+      showScreen('auth');
+      return;
     }
-  });
+
+    // No redirect result — check if already logged in via persisted session
+    onAuthStateChanged(auth, user => {
+      if(user) {
+        initUser(user);
+      } else {
+        currentUser = null;
+        apps = [];
+        showScreen('auth');
+      }
+    });
+  }
+
+  initAuth();
 
   /* ---- FIRESTORE ---- */
   function colRef() {
@@ -476,6 +497,7 @@
   }
 
   function subscribeToData() {
+    if(unsubscribe) unsubscribe();
     setSyncing(true);
     const q = query(colRef(), orderBy('createdAt', 'desc'));
     unsubscribe = onSnapshot(q, snap => {
