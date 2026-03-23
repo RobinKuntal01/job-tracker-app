@@ -401,7 +401,7 @@
 <!-- FIREBASE -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as fbSignOut }
+  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut as fbSignOut }
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy }
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -415,12 +415,9 @@
     appId: "1:1017443054969:web:cbf9e68c3877efc2372ba8"
   };
 
- const firebaseApp = initializeApp(firebaseConfig);
-  console.log(firebaseApp)
+  const firebaseApp = initializeApp(firebaseConfig);
   const auth = getAuth(firebaseApp);
-  console.log(auth)
   const db = getFirestore(firebaseApp);
-  console.log(db)
   const provider = new GoogleAuthProvider();
 
   let currentUser = null;
@@ -432,9 +429,12 @@
   /* ---- AUTH ---- */
   window.signInGoogle = async () => {
     try {
-      await signInWithPopup(auth, provider);
+      const btn = document.querySelector(".google-btn");
+      btn.textContent = "Redirecting to Google...";
+      btn.disabled = true;
+      await signInWithRedirect(auth, provider);
     } catch(e) {
-      document.getElementById('auth-error').textContent = 'Sign-in failed: ' + e.message;
+      document.getElementById("auth-error").textContent = "Sign-in failed: " + e.message;
     }
   };
 
@@ -442,6 +442,14 @@
     if(unsubscribe) unsubscribe();
     await fbSignOut(auth);
   };
+
+  getRedirectResult(auth).catch(e => {
+    if(e && e.code !== "auth/no-current-user") {
+      const el = document.getElementById("auth-error");
+      if(el) el.textContent = "Sign-in error: " + e.message;
+    }
+  });
+
 
   onAuthStateChanged(auth, user => {
     document.getElementById('loading-screen').style.display = 'none';
@@ -483,8 +491,7 @@
   window._saveApp = async (obj) => {
     setSyncing(true);
     try {
-      ff=await setDoc(doc(colRef(), obj.id), obj);
-     console.log(ff)
+      await setDoc(doc(colRef(), obj.id), obj);
     } catch(e) {
       showToast('Save failed: ' + e.message, 'err');
       setSyncing(false);
