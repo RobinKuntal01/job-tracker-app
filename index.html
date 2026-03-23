@@ -483,7 +483,8 @@
   window._saveApp = async (obj) => {
     setSyncing(true);
     try {
-      await setDoc(doc(colRef(), obj.id), obj);
+      ff=await setDoc(doc(colRef(), obj.id), obj);
+     console.log(ff)
     } catch(e) {
       showToast('Save failed: ' + e.message, 'err');
       setSyncing(false);
