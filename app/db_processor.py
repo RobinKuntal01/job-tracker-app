@@ -13,7 +13,7 @@ db: Optional[AsyncIOMotorDatabase] = None
 
 async def connect_to_mongo():
     """Connect to MongoDB"""
-    global db_client, db
+    # global db_client, db
     
     print(f"🔗 Connecting to MongoDB: {settings.MONGODB_URI}")
     
@@ -31,35 +31,32 @@ async def connect_to_mongo():
 
 async def close_mongo_connection():
     """Close MongoDB connection"""
-    global db_client
+    # global db_client
     
-    if db_client:
+    if app.state.db_client:
         print("🔌 Closing MongoDB connection...")
-        db_client.close()
+        app.state.db_client.close()
         print("✅ MongoDB connection closed")
 
 
-def get_database() -> AsyncDatabase:
-    """Get the database instance"""
-    if db is None:
-        raise RuntimeError("Database not initialized. Call connect_to_mongo() first.")
-    return db
-
+def get_db(request: Request):
+    # This is the ONLY place that needs to know about the 'request'
+    return request.app.state.db
 
 # Collections
 async def get_jobs_collection():
     """Get the jobs collection"""
-    database = get_database()
+    database = get_db()
     return database["applications"]
 
 
 async def get_users_collection():
     """Get the users collection"""
-    database = get_database()
+    database = get_db()
     return database["users"]
 
 
 async def get_contacts_collection():
     """Get the contacts collection"""
-    database = get_database()
+    database = get_db()
     return database["contacts"]

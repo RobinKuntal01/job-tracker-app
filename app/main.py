@@ -13,8 +13,14 @@ from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI lifespan context manager for startup/shutdown events"""
-    # Startup
-    await connect_to_mongo()
+
+    # get the db object from connect to mongo
+    database =  await connect_to_mongo()
+
+    # store it in the app.state 
+    app.state.db_client = client
+    app.state.db = database
+    
     yield
     # Shutdown
     await close_mongo_connection()

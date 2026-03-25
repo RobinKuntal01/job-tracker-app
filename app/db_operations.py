@@ -8,9 +8,10 @@ from typing import List, Optional
 import bcrypt
 
 
-async def create_user(user_data: UserCreate) -> dict:
+async def create_user(user_data: UserCreate, db) -> dict:
     """Create a new user with hashed password"""
-    collection = await get_users_collection()
+    # collection = await get_users_collection()
+    collection = db["users"]
     
     # Check if user already exists
     existing = await collection.find_one({"userid": user_data.userid})
@@ -32,9 +33,9 @@ async def create_user(user_data: UserCreate) -> dict:
     }
 
 
-async def authenticate_user(userid: str, password: str) -> Optional[dict]:
+async def authenticate_user(userid: str, password: str, db) -> Optional[dict]:
     """Authenticate user"""
-    collection = await get_users_collection()
+    collection = db["users"]
     user = await collection.find_one({"userid": userid})
     if not user:
         return None
@@ -44,10 +45,10 @@ async def authenticate_user(userid: str, password: str) -> Optional[dict]:
     return None
 
 
-async def create_job(job_data: JobApplicationCreate) -> dict:
+async def create_job(job_data: JobApplicationCreate, db) -> dict:
     """Create a new job application"""
-    collection = await get_jobs_collection()
-    job_dict = job_data.dict(exclude_none=True)
+    collection = db["applications"]
+    job_dict = job_data.model_dump(exclude_none=True)
     
     result = await collection.insert_one(job_dict)
     return {
@@ -57,13 +58,14 @@ async def create_job(job_data: JobApplicationCreate) -> dict:
 
 
 async def get_jobs(
+    db,
     skip: int = 0,
     limit: int = 100,
     status: Optional[str] = None,
     platform: Optional[str] = None
 ) -> List[dict]:
     """Get job applications with optional filtering"""
-    collection = await get_jobs_collection()
+    collection = db["applications"]
     
     query = {}
     if status:
@@ -81,10 +83,10 @@ async def get_jobs(
     return applications
 
 
-async def get_job_by_id(job_id: str) -> Optional[dict]:
+async def get_job_by_id(job_id: str, db) -> Optional[dict]:
     """Get a specific job application by ID"""
-    collection = await get_jobs_collection()
-    
+    # collection = await get_jobs_collection()  
+    collection = db["applications"]
     try:
         application = await collection.find_one({"_id": ObjectId(job_id)})
         if application:
@@ -94,9 +96,9 @@ async def get_job_by_id(job_id: str) -> Optional[dict]:
         return None
 
 
-async def update_job(job_id: str, job_data: JobApplicationUpdate) -> dict:
+async def update_job(job_id: str, job_data: JobApplicationUpdate, db) -> dict:
     """Update a job application"""
-    collection = await get_jobs_collection()
+    collection = db["applications"]
     
     try:
         update_dict = job_data.dict(exclude_none=True)
@@ -114,9 +116,9 @@ async def update_job(job_id: str, job_data: JobApplicationUpdate) -> dict:
         return {"error": str(e)}
 
 
-async def delete_job(job_id: str) -> dict:
+async def delete_job(job_id: str, db) -> dict:
     """Delete a job application"""
-    collection = await get_jobs_collection()
+    collection = db["applications"]
     
     try:
         result = await collection.delete_one({"_id": ObjectId(job_id)})
@@ -131,7 +133,7 @@ async def delete_job(job_id: str) -> dict:
 
 async def get_stats() -> dict:
     """Get statistics about job applications"""
-    collection = await get_jobs_collection()
+    collection = db["applications"]
     
     total = await collection.count_documents({})
     by_status = {}

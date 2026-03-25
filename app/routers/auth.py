@@ -35,10 +35,10 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 
 @router.post("/register", response_model=dict)
-async def register_user(user: UserCreate):
+async def register_user(user: UserCreate, db = Depends(get_db)):
     """Register a new user"""
     try:
-        result = await create_user(user)
+        result = await create_user(user, db)
         if "error" in result:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result["error"])
         return result
@@ -47,10 +47,10 @@ async def register_user(user: UserCreate):
 
 
 @router.post("/login", response_model=Token)
-async def login_user(user: UserLogin):
+async def login_user(user: UserLogin, db = Depends(get_db)):
     """Login user"""
     try:
-        auth_result = await authenticate_user(user.userid, user.password)
+        auth_result = await authenticate_user(user.userid, user.password, db)
         if not auth_result:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         
