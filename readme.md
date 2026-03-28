@@ -1,6 +1,6 @@
 # Job Tracker App
 
-A FastAPI-based job tracking application.
+A FastAPI-based job tracking application
 
 ## Setup
 
