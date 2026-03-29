@@ -37,7 +37,7 @@ async def close_mongo_connection(app):
     
     if app.state.db is not None:
         print("🔌 Closing MongoDB connection...")
-        app.state.db_client.close()
+        app.state.db.close()
         print("✅ MongoDB connection closed")
 
 
