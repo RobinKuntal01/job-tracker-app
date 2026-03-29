@@ -151,7 +151,8 @@ async function refreshData() {
   if(isGuest) return;
   
   try {
-    const response = await fetch(`${API_BASE}/jobs`, {
+    const user_id = localStorage.getItem('jt_userid');
+    const response = await fetch(`${API_BASE}/jobs/${user_id}`, {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
     if (!response.ok) throw new Error(`API error: ${response.statusText}`);
@@ -176,6 +177,7 @@ window._saveApp = async (obj) => {
       obj._id = Date.now().toString();
       obj.created_at = new Date().toISOString();
       obj.updated_at = new Date().toISOString();
+      obj.user_id = 'guest';
       apps.push(obj);
     }
     localStorage.setItem('jt_guest_data', JSON.stringify(apps));
@@ -187,8 +189,8 @@ window._saveApp = async (obj) => {
   try {
     let url = `${API_BASE}/jobs`;
     let method = 'POST';
+    obj.user_id = localStorage.getItem('jt_userid') || 'unknown';
     let body = obj;
-
     if (obj._id) {
       // Update existing
       url = `${API_BASE}/jobs/${obj._id}`;

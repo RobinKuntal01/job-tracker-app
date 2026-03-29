@@ -8,11 +8,11 @@ from app.db_processor import get_db
 router = APIRouter()
 
 
-@router.get("/jobs", response_model=List[dict])
-async def list_jobs(skip: int = 0, limit: int = 100, userid: str = Depends(verify_token), db = Depends(get_db)):
+@router.get("/jobs/{user_id}", response_model=List[dict])
+async def list_jobs(user_id: str, skip: int = 0, limit: int = 100, userid: str = Depends(verify_token), db = Depends(get_db)):
     """Get all job applications"""
     try:
-        jobs = await get_jobs(db, skip=skip, limit=limit)
+        jobs = await get_jobs(db, user_id, skip=skip, limit=limit)
         return jobs
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -74,7 +74,7 @@ async def delete_job_app(job_id: str, userid: str = Depends(verify_token), db = 
 async def get_job_stats(userid: str = Depends(verify_token), db = Depends(get_db)):
     """Get statistics about job applications"""
     try:
-        stats = await get_stats()
+        stats = await get_stats(db)
         return stats
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

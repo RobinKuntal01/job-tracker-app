@@ -59,6 +59,7 @@ async def create_job(job_data: JobApplicationCreate, db) -> dict:
 
 async def get_jobs(
     db,
+    user_id: str,
     skip: int = 0,
     limit: int = 100,
     status: Optional[str] = None,
@@ -68,6 +69,7 @@ async def get_jobs(
     collection = db["applications"]
     
     query = {}
+    query["user_id"] = user_id
     if status:
         query["status"] = status
     if platform:
@@ -131,7 +133,7 @@ async def delete_job(job_id: str, db) -> dict:
         return {"error": str(e)}
 
 
-async def get_stats() -> dict:
+async def get_stats(db) -> dict:
     """Get statistics about job applications"""
     collection = db["applications"]
     

@@ -5,13 +5,14 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from app.config import settings
 from contextlib import asynccontextmanager
 from typing import Optional
+from fastapi import Request
 
 # Global database instance
 db_client: Optional[AsyncIOMotorClient] = None
 db: Optional[AsyncIOMotorDatabase] = None
 
 
-async def connect_to_mongo():
+async def connect_to_mongo(app):
     """Connect to MongoDB"""
     # global db_client, db
     
@@ -21,19 +22,20 @@ async def connect_to_mongo():
         db_client = AsyncIOMotorClient(settings.MONGODB_URI)
         # Test connection
         await db_client.admin.command("ping")
-        db = db_client[settings.MONGODB_DATABASE]
+        db_client = db_client[settings.MONGODB_DATABASE]
+        app.state.db = db_client
         print(f"✅ Successfully connected to MongoDB database: {settings.MONGODB_DATABASE}")
-        return db
+        # return db_client
     except Exception as e:
         print(f"❌ Failed to connect to MongoDB: {e}")
         raise
 
 
-async def close_mongo_connection():
+async def close_mongo_connection(app):
     """Close MongoDB connection"""
     # global db_client
     
-    if app.state.db_client:
+    if app.state.db is not None:
         print("🔌 Closing MongoDB connection...")
         app.state.db_client.close()
         print("✅ MongoDB connection closed")

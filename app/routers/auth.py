@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.models import UserCreate, UserLogin, Token
 from app.db_operations import create_user, authenticate_user
+from app.db_processor import get_db
 from datetime import datetime, timedelta
 from app.config import settings
 from jose import JWTError, jwt

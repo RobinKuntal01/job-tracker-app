@@ -4,7 +4,6 @@ from app.routers.jobs import router as jobs_router
 from app.routers.auth import router as auth_router
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.db_processor import connect_to_mongo, close_mongo_connection
 from contextlib import asynccontextmanager
@@ -15,15 +14,15 @@ async def lifespan(app: FastAPI):
     """FastAPI lifespan context manager for startup/shutdown events"""
 
     # get the db object from connect to mongo
-    database =  await connect_to_mongo()
+    db_client =  await connect_to_mongo(app)
 
     # store it in the app.state 
-    app.state.db_client = client
-    app.state.db = database
+    # app.state.db_client = client
+    
     
     yield
     # Shutdown
-    await close_mongo_connection()
+    await close_mongo_connection(app)
 
 app = FastAPI(
     title="Job Tracker API",

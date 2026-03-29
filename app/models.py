@@ -112,6 +112,7 @@ class JobApplicationCreate(BaseModel):
     """Request model for creating job application"""
     company: str
     role: str
+    user_id: str
     platform: Optional[str] = "LinkedIn"
     status: Optional[str] = "applied"
     date: Optional[str] = None
