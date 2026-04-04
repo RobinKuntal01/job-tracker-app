@@ -7,7 +7,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from app.db_processor import connect_to_mongo, close_mongo_connection
 from contextlib import asynccontextmanager
-
+from gmail_client import create_gmail_service
+from gmail_api import get_email_details, get_recent_emails
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -50,7 +51,12 @@ app.include_router(jobs_router, prefix="/api/v1", tags=["jobs"])
 def read_root():
     return FileResponse("templates/index.html", media_type="text/html")
 
+@app.get("/test-gmail")
+def test_gmail():
+    get_email_details()
+    return JSONResponse(content={"status": "ok"})
 
+    
 
 
 
